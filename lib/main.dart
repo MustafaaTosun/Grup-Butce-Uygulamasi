@@ -17,9 +17,55 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // ----------------------------- MODELLER -----------------------------
 
-enum Currency { eur, tnd }
+// ─── PARA BİRİMLERİ ────────────────────────────────────────────────────────
 
-String currencyLabel(Currency c) => c == Currency.eur ? 'EUR' : 'TND';
+class CurrencyInfo {
+  final String code;
+  final String symbol;
+  final String name;
+  final String flag;
+  const CurrencyInfo(this.code, this.symbol, this.name, this.flag);
+  String get label => '$flag  $code — $name';
+  String format(double v) => '$symbol ${v.toStringAsFixed(2)}';
+  @override bool operator ==(Object o) => o is CurrencyInfo && o.code == code;
+  @override int get hashCode => code.hashCode;
+}
+
+const kCurrencies = [
+  CurrencyInfo('TND', 'د.ت', 'Tunus Dinarı', '🇹🇳'),
+  CurrencyInfo('EUR', '€',   'Euro',           '🇪🇺'),
+  CurrencyInfo('USD', r'$',  'ABD Doları',     '🇺🇸'),
+  CurrencyInfo('TRY', '₺',   'Türk Lirası',    '🇹🇷'),
+  CurrencyInfo('GBP', '£',   'İngiliz Sterlini','🇬🇧'),
+  CurrencyInfo('CHF', 'Fr',  'İsviçre Frangı', '🇨🇭'),
+  CurrencyInfo('JPY', '¥',   'Japon Yeni',     '🇯🇵'),
+  CurrencyInfo('CAD', 'C\$', 'Kanada Doları',  '🇨🇦'),
+  CurrencyInfo('AUD', 'A\$', 'Avustralya Doları','🇦🇺'),
+  CurrencyInfo('SAR', '﷼',  'Suudi Riyali',   '🇸🇦'),
+  CurrencyInfo('AED', 'د.إ', 'BAE Dirhemi',    '🇦🇪'),
+  CurrencyInfo('EGP', 'E£',  'Mısır Poundu',   '🇪🇬'),
+  CurrencyInfo('MAD', 'د.م.','Fas Dirhemi',    '🇲🇦'),
+  CurrencyInfo('DZD', 'دج',  'Cezayir Dinarı', '🇩🇿'),
+  CurrencyInfo('LYD', 'ل.د', 'Libya Dinarı',   '🇱🇾'),
+  CurrencyInfo('CNY', '¥',   'Çin Yuanı',      '🇨🇳'),
+  CurrencyInfo('INR', '₹',   'Hindistan Rupisi','🇮🇳'),
+  CurrencyInfo('RUB', '₽',   'Rus Rublesi',    '🇷🇺'),
+  CurrencyInfo('BRL', 'R\$', 'Brezilya Reali', '🇧🇷'),
+  CurrencyInfo('MXN', r'$',  'Meksika Pesosu', '🇲🇽'),
+  CurrencyInfo('KWD', 'د.ك', 'Kuveyt Dinarı',  '🇰🇼'),
+  CurrencyInfo('QAR', 'ر.ق', 'Katar Riyali',   '🇶🇦'),
+  CurrencyInfo('NOK', 'kr',  'Norveç Kronu',   '🇳🇴'),
+  CurrencyInfo('SEK', 'kr',  'İsveç Kronu',    '🇸🇪'),
+  CurrencyInfo('DKK', 'kr',  'Danimarka Kronu','🇩🇰'),
+  CurrencyInfo('PLN', 'zł',  'Polonya Zlotısı','🇵🇱'),
+  CurrencyInfo('CZK', 'Kč',  'Çek Kronası',    '🇨🇿'),
+  CurrencyInfo('HUF', 'Ft',  'Macar Forinti',  '🇭🇺'),
+  CurrencyInfo('RON', 'lei', 'Romen Leyi',     '🇷🇴'),
+  CurrencyInfo('BGN', 'лв',  'Bulgar Levası',  '🇧🇬'),
+];
+
+CurrencyInfo currencyByCode(String code) =>
+    kCurrencies.firstWhere((c) => c.code == code, orElse: () => kCurrencies[0]);
 
 class Member {
   final String id;
@@ -37,49 +83,61 @@ class Member {
 class Expense {
   final String id;
   final String description;
-  final double amount; // ham tutar
-  final Currency currency;
-  final String payerId; // ödeyen
-  final List<String> participantIds; // eşit bölünecek kişiler
+  final double amount;
+  final String currencyCode;
+  final String payerId;
+  final List<String> participantIds;
   final DateTime createdAt;
 
   const Expense({
     required this.id,
     required this.description,
     required this.amount,
-    required this.currency,
+    required this.currencyCode,
     required this.payerId,
     required this.participantIds,
     required this.createdAt,
   });
 
+  CurrencyInfo get currencyInfo => currencyByCode(currencyCode);
+
   Map<String, dynamic> toJson() => {
-    "id": id,
-    "description": description,
-    "amount": amount,
-    "currency": currency.index,
-    "payerId": payerId,
-    "participantIds": participantIds,
-    "createdAt": createdAt.toIso8601String(),
+    'id': id,
+    'description': description,
+    'amount': amount,
+    'currencyCode': currencyCode,
+    'payerId': payerId,
+    'participantIds': participantIds,
+    'createdAt': createdAt.toIso8601String(),
   };
 
-  factory Expense.fromJson(Map<String, dynamic> j) => Expense(
-    id: j['id'],
-    description: j['description'],
-    amount: (j['amount'] as num).toDouble(),
-    currency: Currency.values[j['currency'] as int],
-    payerId: j['payerId'],
-    participantIds: (j['participantIds'] as List).cast<String>(),
-    createdAt: DateTime.parse(j['createdAt']),
-  );
+  factory Expense.fromJson(Map<String, dynamic> j) {
+    String code;
+    if (j.containsKey('currencyCode')) {
+      code = j['currencyCode'] as String;
+    } else {
+      // Eski format: 0=EUR, 1=TND
+      code = (j['currency'] as int? ?? 0) == 0 ? 'EUR' : 'TND';
+    }
+    return Expense(
+      id: j['id'],
+      description: j['description'],
+      amount: (j['amount'] as num).toDouble(),
+      currencyCode: code,
+      payerId: j['payerId'],
+      participantIds: (j['participantIds'] as List).cast<String>(),
+      createdAt: DateTime.parse(j['createdAt']),
+    );
+  }
 }
 
 class SettlementEdge {
-  final String from; // borçlu
-  final String to; // alacaklı
+  final String from;
+  final String to;
   final double amount;
-  final Currency currency;
-  const SettlementEdge(this.from, this.to, this.amount, this.currency);
+  final String currencyCode;
+  const SettlementEdge(this.from, this.to, this.amount, this.currencyCode);
+  CurrencyInfo get currencyInfo => currencyByCode(currencyCode);
 }
 
 // ----------------------------- STATE -----------------------------
@@ -88,49 +146,53 @@ class BalanceState {
   final List<Member> members;
   final List<Expense> expenses;
   final bool isLoading;
-  final double budgetEur; // grup bütçesi (EUR)
-  final double budgetTnd; // grup bütçesi (TND)
+  final Map<String, double> budgets; // currencyCode -> bütçe
 
   const BalanceState({
     required this.members,
     required this.expenses,
     required this.isLoading,
-    required this.budgetEur,
-    required this.budgetTnd,
+    required this.budgets,
   });
 
   BalanceState copyWith({
     List<Member>? members,
     List<Expense>? expenses,
     bool? isLoading,
-    double? budgetEur,
-    double? budgetTnd,
+    Map<String, double>? budgets,
   }) => BalanceState(
     members: members ?? this.members,
     expenses: expenses ?? this.expenses,
     isLoading: isLoading ?? this.isLoading,
-    budgetEur: budgetEur ?? this.budgetEur,
-    budgetTnd: budgetTnd ?? this.budgetTnd,
+    budgets: budgets ?? this.budgets,
   );
 
   Map<String, dynamic> toJson() => {
     'members': members.map((m) => m.toJson()).toList(),
     'expenses': expenses.map((e) => e.toJson()).toList(),
-    'budgetEur': budgetEur,
-    'budgetTnd': budgetTnd,
+    'budgets': budgets,
   };
 
-  factory BalanceState.fromJson(Map<String, dynamic> j) => BalanceState(
-    members: (j['members'] as List)
-        .map((e) => Member.fromJson(e))
-        .toList(growable: false),
-    expenses: (j['expenses'] as List)
-        .map((e) => Expense.fromJson(e))
-        .toList(growable: false),
-    isLoading: false,
-    budgetEur: (j['budgetEur'] as num?)?.toDouble() ?? 0.0,
-    budgetTnd: (j['budgetTnd'] as num?)?.toDouble() ?? 0.0,
-  );
+  factory BalanceState.fromJson(Map<String, dynamic> j) {
+    Map<String, double> budgets;
+    if (j.containsKey('budgets')) {
+      budgets = (j['budgets'] as Map<String, dynamic>)
+          .map((k, v) => MapEntry(k, (v as num).toDouble()));
+    } else {
+      // Eski v1/v2 verisi taşıma
+      budgets = {};
+      final eur = (j['budgetEur'] as num?)?.toDouble() ?? 0.0;
+      final tnd = (j['budgetTnd'] as num?)?.toDouble() ?? 0.0;
+      if (eur > 0) budgets['EUR'] = eur;
+      if (tnd > 0) budgets['TND'] = tnd;
+    }
+    return BalanceState(
+      members: (j['members'] as List).map((e) => Member.fromJson(e)).toList(),
+      expenses: (j['expenses'] as List).map((e) => Expense.fromJson(e)).toList(),
+      isLoading: false,
+      budgets: budgets,
+    );
+  }
 }
 
 // ----------------------------- CUBIT -----------------------------
@@ -146,14 +208,13 @@ class BalanceCubit extends Cubit<BalanceState> {
           ],
           expenses: [],
           isLoading: true,
-          budgetEur: 0.0,
-          budgetTnd: 0.0,
+          budgets: {},
         ),
       ) {
     _load();
   }
 
-  static const _kKey = 'balance_data_v2';
+  static const _kKey = 'balance_data_v3';
 
   Future<void> _save() async {
     final sp = await SharedPreferences.getInstance();
@@ -163,38 +224,12 @@ class BalanceCubit extends Cubit<BalanceState> {
 
   Future<void> _load() async {
     final sp = await SharedPreferences.getInstance();
-    final raw = sp.getString(_kKey);
-    if (raw == null) {
-      // v1'den taşıma: önceki anahtar varsa onu da okumayı dene
-      final legacy = sp.getString('balance_data_v1');
-      if (legacy != null) {
-        try {
-          final j = jsonDecode(legacy) as Map<String, dynamic>;
-          final members = (j['members'] as List)
-              .map((e) => Member.fromJson(e))
-              .toList(growable: false);
-          final expenses = (j['expenses'] as List)
-              .map((e) => Expense.fromJson(e))
-              .toList(growable: false);
-          emit(
-            BalanceState(
-              members: members,
-              expenses: expenses,
-              isLoading: false,
-              budgetEur: 0.0,
-              budgetTnd: 0.0,
-            ),
-          );
-          await _save();
-          return;
-        } catch (_) {}
-      }
-      emit(state.copyWith(isLoading: false));
-      return;
-    }
+    final raw = sp.getString(_kKey)
+        ?? sp.getString('balance_data_v2')
+        ?? sp.getString('balance_data_v1');
+    if (raw == null) { emit(state.copyWith(isLoading: false)); return; }
     try {
-      final j = jsonDecode(raw) as Map<String, dynamic>;
-      emit(BalanceState.fromJson(j));
+      emit(BalanceState.fromJson(jsonDecode(raw) as Map<String, dynamic>));
     } catch (_) {
       emit(state.copyWith(isLoading: false));
     }
@@ -228,110 +263,79 @@ class BalanceCubit extends Cubit<BalanceState> {
   void addExpense({
     required String description,
     required double amount,
-    required Currency currency,
+    required String currencyCode,
     required String payerId,
     required List<String> participantIds,
   }) {
-    if (amount <= 0) return;
-    if (participantIds.isEmpty) return;
-
-    final expense = Expense(
-      id: UniqueKey().toString(),
-      description: description.trim(),
-      amount: amount,
-      currency: currency,
-      payerId: payerId,
-      participantIds: participantIds,
-      createdAt: DateTime.now(),
-    );
-
-    final expenses = [...state.expenses, expense];
-    emit(state.copyWith(expenses: expenses));
+    if (amount <= 0 || participantIds.isEmpty) return;
+    emit(state.copyWith(expenses: [
+      ...state.expenses,
+      Expense(
+        id: UniqueKey().toString(),
+        description: description.trim(),
+        amount: amount,
+        currencyCode: currencyCode,
+        payerId: payerId,
+        participantIds: participantIds,
+        createdAt: DateTime.now(),
+      ),
+    ]));
     _save();
   }
 
   void deleteExpense(String id) {
-    final expenses = state.expenses.where((e) => e.id != id).toList();
-    emit(state.copyWith(expenses: expenses));
+    emit(state.copyWith(expenses: state.expenses.where((e) => e.id != id).toList()));
     _save();
   }
 
-  void setBudgets({double? eur, double? tnd}) {
-    emit(
-      state.copyWith(
-        budgetEur: eur ?? state.budgetEur,
-        budgetTnd: tnd ?? state.budgetTnd,
-      ),
-    );
+  void setBudget(String currencyCode, double amount) {
+    final b = Map<String, double>.from(state.budgets);
+    if (amount <= 0) b.remove(currencyCode); else b[currencyCode] = amount;
+    emit(state.copyWith(budgets: b));
     _save();
   }
 
-  // Kişi başına netler (para birimi bazında ayrı)
-  Map<String, double> netByMember(Currency c) {
-    final map = <String, double>{};
-    for (final m in state.members) {
-      map[m.id] = 0.0;
-    }
-    for (final e in state.expenses.where((e) => e.currency == c)) {
-      // ödeyen alacaklı (+)
+  Set<String> get activeCurrencies {
+    final s = state.expenses.map((e) => e.currencyCode).toSet();
+    s.addAll(state.budgets.keys);
+    return s;
+  }
+
+  Map<String, double> netByMember(String currencyCode) {
+    final map = <String, double>{for (final m in state.members) m.id: 0.0};
+    for (final e in state.expenses.where((e) => e.currencyCode == currencyCode)) {
       map[e.payerId] = (map[e.payerId] ?? 0) + e.amount;
-      // katılımcılar borçlu (- pay)
       final share = e.amount / e.participantIds.length;
       for (final pid in e.participantIds) {
         map[pid] = (map[pid] ?? 0) - share;
       }
     }
-    map.updateAll((key, value) => double.parse(value.toStringAsFixed(2)));
-    return map;
+    return map.map((k, v) => MapEntry(k, double.parse(v.toStringAsFixed(2))));
   }
 
-  double totalByCurrency(Currency c) => state.expenses
-      .where((e) => e.currency == c)
-      .fold(0.0, (sum, e) => sum + e.amount);
+  double totalByCurrency(String code) =>
+      state.expenses.where((e) => e.currencyCode == code).fold(0.0, (s, e) => s + e.amount);
 
-  double remainingByCurrency(Currency c) {
-    final total = totalByCurrency(c);
-    final budget = c == Currency.eur ? state.budgetEur : state.budgetTnd;
-    return double.parse((budget - total).toStringAsFixed(2));
-  }
+  double remainingByCurrency(String code) =>
+      double.parse(((state.budgets[code] ?? 0.0) - totalByCurrency(code)).toStringAsFixed(2));
 
-  // Basit borç kapatma algoritması (greedy) — para birimi bazında
-  List<SettlementEdge> settlements(Currency c) {
-    final net = netByMember(c);
-    final creditors = <String>[];
-    final debtors = <String>[];
-
-    net.forEach((id, amount) {
-      if (amount > 0) creditors.add(id);
-      if (amount < 0) debtors.add(id);
-    });
-
-    final cred = [
-      for (final id in creditors) [id, net[id]!.abs()],
-    ]..sort((a, b) => (b[1] as double).compareTo(a[1] as double));
-
-    final debt = [
-      for (final id in debtors) [id, net[id]!.abs()],
-    ]..sort((a, b) => (b[1] as double).compareTo(a[1] as double));
-
+  List<SettlementEdge> settlements(String currencyCode) {
+    final net = netByMember(currencyCode);
+    final cred = [for (final e in net.entries) if (e.value > 0.005) [e.key, e.value]];
+    final debt = [for (final e in net.entries) if (e.value < -0.005) [e.key, e.value.abs()]];
+    cred.sort((a, b) => (b[1] as double).compareTo(a[1] as double));
+    debt.sort((a, b) => (b[1] as double).compareTo(a[1] as double));
     final res = <SettlementEdge>[];
     int i = 0, j = 0;
     while (i < debt.length && j < cred.length) {
-      final dId = debt[i][0] as String;
-      final cId = cred[j][0] as String;
-      final dAmt = debt[i][1] as double;
-      final cAmt = cred[j][1] as double;
+      double dAmt = debt[i][1] as double;
+      double cAmt = cred[j][1] as double;
       final pay = dAmt < cAmt ? dAmt : cAmt;
-
-      if (pay > 0.0) {
-        res.add(
-          SettlementEdge(dId, cId, double.parse(pay.toStringAsFixed(2)), c),
-        );
-      }
+      if (pay > 0) res.add(SettlementEdge(debt[i][0] as String, cred[j][0] as String, double.parse(pay.toStringAsFixed(2)), currencyCode));
       debt[i][1] = dAmt - pay;
       cred[j][1] = cAmt - pay;
-      if ((debt[i][1] as double) <= 0.0001) i++;
-      if ((cred[j][1] as double) <= 0.0001) j++;
+      if ((debt[i][1] as double) <= 0.001) i++;
+      if ((cred[j][1] as double) <= 0.001) j++;
     }
     return res;
   }
@@ -378,7 +382,7 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bakiye — EUR & TND'),
+        title: const Text('Bakiye'),
         bottom: TabBar(
           controller: _tab,
           tabs: const [
@@ -455,7 +459,7 @@ class ExpensesTab extends StatelessWidget {
                     e.description.isEmpty ? 'Harcama' : e.description,
                   ),
                   subtitle: Text(
-                    '${currencyLabel(e.currency)} ${(e.amount).toStringAsFixed(2)} — ödeyen: $payer\n'
+                    '${e.currencyInfo.flag} ${e.currencyInfo.code} ${e.amount.toStringAsFixed(2)} — ödeyen: $payer\n'
                     'katılan: ${e.participantIds.map((id) => membersById[id]?.name ?? '?').join(', ')}',
                   ),
                   trailing: Text(
@@ -477,159 +481,94 @@ class BalancesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<BalanceCubit, BalanceState>(
       builder: (context, state) {
-        if (state.isLoading)
-          return const Center(child: CircularProgressIndicator());
+        if (state.isLoading) return const Center(child: CircularProgressIndicator());
         final cubit = context.read<BalanceCubit>();
-        final eurNet = cubit.netByMember(Currency.eur);
-        final tndNet = cubit.netByMember(Currency.tnd);
-
-        final totalEUR = cubit.totalByCurrency(Currency.eur);
-        final totalTND = cubit.totalByCurrency(Currency.tnd);
-        final leftEUR = cubit.remainingByCurrency(Currency.eur);
-        final leftTND = cubit.remainingByCurrency(Currency.tnd);
-
-        // Özet kartları
-        return SingleChildScrollView(
+        final codes = cubit.activeCurrencies.toList();
+        if (codes.isEmpty) {
+          return const Center(child: Text('Henüz harcama veya bütçe yok.'));
+        }
+        return ListView.separated(
           padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                spacing: 8,
-                children: [
-                  Column(
-                    children: [
-                      _totalCard(
-                        'Bütçe EUR',
-                        '€ ${state.budgetEur.toStringAsFixed(2)}',
-                      ),
-                      _totalCard(
-                        'Harcanan EUR',
-                        '€ ${totalEUR.toStringAsFixed(2)}',
-                      ),
-                      _totalCard(
-                        'Kalan EUR',
-                        '€ ${leftEUR.toStringAsFixed(2)}',
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      _totalCard(
-                        'Bütçe TND',
-                        'د.ت ${state.budgetTnd.toStringAsFixed(2)}',
-                      ),
-                      _totalCard(
-                        'Harcanan TND',
-                        'د.ت ${totalTND.toStringAsFixed(2)}',
-                      ),
-                      _totalCard(
-                        'Kalan TND',
-                        'د.ت ${leftTND.toStringAsFixed(2)}',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Kişi Bazında Netler',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Card(
+          itemCount: codes.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, idx) {
+            final code = codes[idx];
+            final info = currencyByCode(code);
+            final total = cubit.totalByCurrency(code);
+            final budget = state.budgets[code] ?? 0.0;
+            final remaining = cubit.remainingByCurrency(code);
+            final net = cubit.netByMember(code);
+            final settlements = cubit.settlements(code);
+            final names = {for (final m in state.members) m.id: m.name};
+            return Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(children: [
+                      Text(info.flag, style: const TextStyle(fontSize: 22)),
+                      const SizedBox(width: 8),
+                      Text('${info.code} — ${info.name}',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    ]),
+                    const Divider(),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                      _Stat('Bütçe', budget > 0 ? info.format(budget) : '—'),
+                      _Stat('Harcanan', info.format(total)),
+                      if (budget > 0)
+                        _Stat('Kalan', info.format(remaining),
+                            color: remaining < 0 ? Colors.red : Colors.green),
+                    ]),
+                    const Divider(),
+                    Text('Kişi Bazında Netler', style: Theme.of(context).textTheme.labelLarge),
                     for (final m in state.members)
                       ListTile(
-                        leading: const Icon(Icons.person),
+                        dense: true,
+                        leading: const Icon(Icons.person, size: 18),
                         title: Text(m.name),
-                        subtitle: Text(
-                          'EUR: ${eurNet[m.id]?.toStringAsFixed(2) ?? '0.00'}  |  '
-                          'TND: ${tndNet[m.id]?.toStringAsFixed(2) ?? '0.00'}',
+                        trailing: Text(
+                          info.format(net[m.id] ?? 0),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: (net[m.id] ?? 0) >= 0 ? Colors.green : Colors.red,
+                          ),
                         ),
                       ),
+                    if (settlements.isNotEmpty) ...[
+                      const Divider(),
+                      Text('Uzlaştırma Önerileri', style: Theme.of(context).textTheme.labelLarge),
+                      for (final e in settlements)
+                        ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.swap_horiz, size: 18),
+                          title: Text('${names[e.from]} → ${names[e.to]}'),
+                          trailing: Text(info.format(e.amount),
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                    ],
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Hızlı Uzlaştırma Önerileri (EUR)',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              _settlementList(
-                context,
-                cubit.settlements(Currency.eur),
-                state.members,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Hızlı Uzlaştırma Önerileri (TND)',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              _settlementList(
-                context,
-                cubit.settlements(Currency.tnd),
-                state.members,
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
+}
 
-  Widget _totalCard(String title, String value) {
-    return SizedBox(
-      width: 180,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title),
-              const SizedBox(height: 6),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _settlementList(
-    BuildContext context,
-    List<SettlementEdge> edges,
-    List<Member> members,
-  ) {
-    if (edges.isEmpty) {
-      return const Card(child: ListTile(title: Text('Uzlaştırma gerekmiyor.')));
-    }
-    final names = {for (final m in members) m.id: m.name};
-    return Card(
-      child: Column(
-        children: [
-          for (final e in edges)
-            ListTile(
-              leading: const Icon(Icons.swap_horiz),
-              title: Text('${names[e.from]} → ${names[e.to]}'),
-              subtitle: Text(
-                '${currencyLabel(e.currency)} ${e.amount.toStringAsFixed(2)} ödesin',
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+class _Stat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color? color;
+  const _Stat(this.label, this.value, {this.color});
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    Text(label, style: Theme.of(context).textTheme.labelSmall),
+    Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
+  ]);
 }
 
 class MembersTab extends StatefulWidget {
@@ -688,15 +627,13 @@ class _MembersTabState extends State<MembersTab> {
                               context.read<BalanceCubit>().removeMember(m.id),
                         ),
                         onTap: () async {
+                          final cubit = context.read<BalanceCubit>();
                           final rename = await showDialog<String>(
                             context: context,
                             builder: (_) => const _RenameDialogLauncher(),
                           );
                           if (rename != null && rename.trim().isNotEmpty) {
-                            context.read<BalanceCubit>().renameMember(
-                              m.id,
-                              rename.trim(),
-                            );
+                            cubit.renameMember(m.id, rename.trim());
                           }
                         },
                       ),
@@ -767,7 +704,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   final _formKey = GlobalKey<FormState>();
   final _desc = TextEditingController();
   final _amount = TextEditingController();
-  Currency _currency = Currency.tnd;
+  String _currencyCode = 'TND';
   String? _payerId;
   final Set<String> _participants = {};
 
@@ -807,26 +744,30 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                     },
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Text('Para birimi:'),
-                      const SizedBox(width: 12),
-                      DropdownButton<Currency>(
-                        value: _currency,
-                        items: const [
-                          DropdownMenuItem(
-                            value: Currency.tnd,
-                            child: Text('TND'),
-                          ),
-                          DropdownMenuItem(
-                            value: Currency.eur,
-                            child: Text('EUR'),
-                          ),
-                        ],
-                        onChanged: (v) =>
-                            setState(() => _currency = v ?? Currency.tnd),
+                  InkWell(
+                    onTap: () async {
+                      final code = await showDialog<String>(
+                        context: context,
+                        builder: (_) => _CurrencyPickerDialog(selectedCode: _currencyCode),
+                      );
+                      if (code != null) setState(() => _currencyCode = code);
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Para Birimi',
+                        border: OutlineInputBorder(),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(() {
+                            final c = currencyByCode(_currencyCode);
+                            return '${c.flag}  ${c.code} — ${c.name}';
+                          }()),
+                          const Icon(Icons.arrow_drop_down),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -887,7 +828,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                 context.read<BalanceCubit>().addExpense(
                   description: _desc.text,
                   amount: double.parse(_amount.text.replaceAll(',', '.')),
-                  currency: _currency,
+                  currencyCode: _currencyCode,
                   payerId: _payerId!,
                   participantIds: _participants.toList(),
                 );
@@ -909,52 +850,159 @@ class SetBudgetDialog extends StatefulWidget {
 }
 
 class _SetBudgetDialogState extends State<SetBudgetDialog> {
-  final _eur = TextEditingController();
-  final _tnd = TextEditingController();
+  String _selectedCode = 'TND';
+  final _amountCtrl = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    final s = context.read<BalanceCubit>().state;
-    _eur.text = s.budgetEur == 0 ? '' : s.budgetEur.toStringAsFixed(2);
-    _tnd.text = s.budgetTnd == 0 ? '' : s.budgetTnd.toStringAsFixed(2);
+  void dispose() {
+    _amountCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    return BlocBuilder<BalanceCubit, BalanceState>(
+      builder: (context, state) {
+        final budgets = state.budgets;
+        return AlertDialog(
+          title: const Text('Grup Bütçesi'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (budgets.isNotEmpty) ...[
+                  Text('Mevcut Bütçeler', style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 4),
+                  for (final entry in budgets.entries)
+                    ListTile(
+                      dense: true,
+                      leading: Text(currencyByCode(entry.key).flag,
+                          style: const TextStyle(fontSize: 20)),
+                      title: Text('${entry.key}: ${currencyByCode(entry.key).format(entry.value)}'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 18),
+                        onPressed: () => context.read<BalanceCubit>().setBudget(entry.key, 0),
+                      ),
+                    ),
+                  const Divider(),
+                ],
+                Text('Yeni Bütçe Ekle', style: Theme.of(context).textTheme.labelLarge),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () async {
+                    final code = await showDialog<String>(
+                      context: context,
+                      builder: (_) => _CurrencyPickerDialog(selectedCode: _selectedCode),
+                    );
+                    if (code != null) setState(() => _selectedCode = code);
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Para Birimi',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(() {
+                          final c = currencyByCode(_selectedCode);
+                          return '${c.flag}  ${c.code} — ${c.name}';
+                        }()),
+                        const Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _amountCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Bütçe Tutarı (${currencyByCode(_selectedCode).symbol})',
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Kapat'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0.0;
+                if (amount > 0) {
+                  context.read<BalanceCubit>().setBudget(_selectedCode, amount);
+                  _amountCtrl.clear();
+                  setState(() {});
+                }
+              },
+              child: const Text('Ekle'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _CurrencyPickerDialog extends StatefulWidget {
+  final String selectedCode;
+  const _CurrencyPickerDialog({required this.selectedCode});
+  @override
+  State<_CurrencyPickerDialog> createState() => _CurrencyPickerDialogState();
+}
+
+class _CurrencyPickerDialogState extends State<_CurrencyPickerDialog> {
+  String _query = '';
+  @override
+  Widget build(BuildContext context) {
+    final filtered = kCurrencies
+        .where((c) =>
+            c.code.toLowerCase().contains(_query.toLowerCase()) ||
+            c.name.toLowerCase().contains(_query.toLowerCase()))
+        .toList();
     return AlertDialog(
-      title: const Text('Grup Bütçesi (EUR & TND)'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _eur,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'EUR Bütçe'),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _tnd,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'TND Bütçe'),
-          ),
-        ],
+      title: const Text('Para Birimi Seç'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 420,
+        child: Column(
+          children: [
+            TextField(
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Ara...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) => setState(() => _query = v),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                itemCount: filtered.length,
+                itemBuilder: (_, i) {
+                  final c = filtered[i];
+                  return ListTile(
+                    leading: Text(c.flag, style: const TextStyle(fontSize: 24)),
+                    title: Text(c.code, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(c.name),
+                    trailing: c.code == widget.selectedCode
+                        ? const Icon(Icons.check_circle, color: Colors.teal)
+                        : null,
+                    onTap: () => Navigator.pop(context, c.code),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Vazgeç'),
-        ),
-        FilledButton(
-          onPressed: () {
-            final eur = double.tryParse(_eur.text.replaceAll(',', '.')) ?? 0.0;
-            final tnd = double.tryParse(_tnd.text.replaceAll(',', '.')) ?? 0.0;
-            context.read<BalanceCubit>().setBudgets(eur: eur, tnd: tnd);
-            Navigator.pop(context);
-          },
-          child: const Text('Kaydet'),
-        ),
-      ],
     );
   }
 }
