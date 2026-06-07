@@ -5,7 +5,7 @@
 
 ## 📖 Hakkında
 
-**Bakiye**, grup seyahatlerinde ortak masrafları takip etmek için geliştirilmiş hafif ve kullanışlı bir Flutter uygulamasıdır. Tunus seyahatlerini göz önünde bulundurarak **EUR** ve **TND (Tunus Dinarı)** olmak üzere iki para birimini aynı anda destekler.
+**Bakiye**, grup seyahatlerinde ortak masrafları takip etmek için geliştirilmiş hafif ve kullanışlı bir Flutter uygulamasıdır.
 
 Karmaşık muhasebe uygulamalarına gerek yok — kim ödedi, kim katıldı, kim ne kadar borçlu; hepsi tek ekranda.
 
@@ -17,8 +17,8 @@ Karmaşık muhasebe uygulamalarına gerek yok — kim ödedi, kim katıldı, kim
 |---|---|
 | **Üye Yönetimi** | Grup üyesi ekle, isim değiştir veya sil |
 | **Harcama Takibi** | Açıklama, tutar, para birimi, ödeyen ve katılımcı seç |
-| **Çoklu Para Birimi** | EUR ve TND için ayrı ayrı hesaplama |
-| **Grup Bütçesi** | EUR ve TND için bütçe gir, kalan miktarı anlık takip et |
+| **Çoklu Para Birimi** | Tüm para birimleri için ayrı ayrı hesaplama |
+| **Grup Bütçesi** | Bütçe gir, kalan miktarı anlık takip et |
 | **Net Bakiye** | Her üyenin ödediği ile payı arasındaki farkı görüntüle |
 | **Uzlaştırma Önerileri** | Minimum transfer sayısıyla borçları kapatmak için akıllı öneriler |
 | **Kalıcı Kayıt** | Tüm veriler cihazda saklanır, internet bağlantısı gerekmez |
