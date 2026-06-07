@@ -1,12 +1,6 @@
 # 💰 Bakiye — Grup Harcama Takip Uygulaması
 
 > Seyahatlerde ortak harcamaları yönet, kim kime ne kadar borçlu hemen gör.
-
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart)](https://dart.dev)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Android-brightgreen?logo=android)](https://flutter.dev/docs/deployment/android)
-
 ---
 
 ## 📖 Hakkında
@@ -29,14 +23,6 @@ Karmaşık muhasebe uygulamalarına gerek yok — kim ödedi, kim katıldı, kim
 | **Uzlaştırma Önerileri** | Minimum transfer sayısıyla borçları kapatmak için akıllı öneriler |
 | **Kalıcı Kayıt** | Tüm veriler cihazda saklanır, internet bağlantısı gerekmez |
 | **Kaydır & Sil** | Harcamaları sola kaydırarak hızlıca sil |
-
----
-
-## 📱 Ekran Görüntüleri
-
-| Harcamalar | Bakiyeler | Kişiler |
-|:---:|:---:|:---:|
-| Harcama listesi & ekleme | Net bakiyeler & uzlaştırma | Üye yönetimi |
 
 ---
 
