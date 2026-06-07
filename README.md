@@ -17,18 +17,18 @@ Karmaşık muhasebe uygulamalarına gerek yok — kim ödedi, kim katıldı, kim
 
 ---
 
-## ✨ Özellikler
+## Özellikler
 
 | Özellik | Açıklama |
 |---|---|
-| 👥 **Üye Yönetimi** | Grup üyesi ekle, isim değiştir veya sil |
-| 💸 **Harcama Takibi** | Açıklama, tutar, para birimi, ödeyen ve katılımcı seç |
-| 🌍 **Çoklu Para Birimi** | EUR ve TND için ayrı ayrı hesaplama |
-| 📊 **Grup Bütçesi** | EUR ve TND için bütçe gir, kalan miktarı anlık takip et |
-| ⚖️ **Net Bakiye** | Her üyenin ödediği ile payı arasındaki farkı görüntüle |
-| 🔄 **Uzlaştırma Önerileri** | Minimum transfer sayısıyla borçları kapatmak için akıllı öneriler |
-| 💾 **Kalıcı Kayıt** | Tüm veriler cihazda saklanır, internet bağlantısı gerekmez |
-| 🗑️ **Kaydır & Sil** | Harcamaları sola kaydırarak hızlıca sil |
+| **Üye Yönetimi** | Grup üyesi ekle, isim değiştir veya sil |
+| **Harcama Takibi** | Açıklama, tutar, para birimi, ödeyen ve katılımcı seç |
+| **Çoklu Para Birimi** | EUR ve TND için ayrı ayrı hesaplama |
+| **Grup Bütçesi** | EUR ve TND için bütçe gir, kalan miktarı anlık takip et |
+| **Net Bakiye** | Her üyenin ödediği ile payı arasındaki farkı görüntüle |
+| **Uzlaştırma Önerileri** | Minimum transfer sayısıyla borçları kapatmak için akıllı öneriler |
+| **Kalıcı Kayıt** | Tüm veriler cihazda saklanır, internet bağlantısı gerekmez |
+| **Kaydır & Sil** | Harcamaları sola kaydırarak hızlıca sil |
 
 ---
 
@@ -39,8 +39,6 @@ Karmaşık muhasebe uygulamalarına gerek yok — kim ödedi, kim katıldı, kim
 | Harcama listesi & ekleme | Net bakiyeler & uzlaştırma | Üye yönetimi |
 
 ---
-
-## 🚀 Kurulum
 
 ### Gereksinimler
 
@@ -104,20 +102,9 @@ Borç uzlaştırma için **greedy (açgözlü) algoritma** kullanılmaktadır:
 
 ---
 
-## 🤝 Katkı
-
-1. Fork'la
-2. Feature branch oluştur (`git checkout -b feature/yeni-ozellik`)
-3. Değişikliklerini commit'le (`git commit -m 'feat: yeni özellik eklendi'`)
-4. Branch'i push'la (`git push origin feature/yeni-ozellik`)
-5. Pull Request aç
-
----
-
 ## 📄 Lisans
 
 Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
 
 ---
 
-<p align="center">Flutter ile ❤️ ile yapıldı</p>
